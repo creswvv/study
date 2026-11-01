@@ -1,0 +1,35 @@
+@model List<Teacher>
+@{
+    ViewData["Title"] = "Преподаватели";
+    var subjects = (List<Subject>)ViewBag.Subjects;
+    var admin = User.IsInRole("Admin");
+}
+<div class="container">
+    <div class="page-head">
+        <div><h1>Преподаватели</h1><p class="muted">Всего: @Model.Count</p></div>
+        @if (admin) { <a class="btn" asp-action="Create">+ Добавить преподавателя</a> }
+    </div>
+    <div class="grid g-3">
+        @foreach (var t in Model)
+        {
+            var subj = string.Join(", ", subjects.Where(s => s.TeacherId == t.Id).Select(s => s.Name));
+            <div class="teacher-card">
+                <span class="avatar lg av-@(t.Id % 6)">@t.Initials</span>
+                <h3>@t.FullName</h3>
+                <p class="sub">@t.Specialization</p>
+                <p>Возраст: @t.Age · Стаж: @t.Experience лет</p>
+                <p class="small">Предметы: @(subj.Length > 0 ? subj : "—")</p>
+                @if (admin)
+                {
+                    <form asp-action="UpdateExperience" asp-route-id="@t.Id" method="post" class="inline-form">
+                        <input type="number" name="years" value="@t.Experience" min="0" max="60" />
+                        <button class="btn btn-light sm" type="submit">Обновить стаж</button>
+                    </form>
+                    <form asp-action="Delete" asp-route-id="@t.Id" method="post" onsubmit="return confirm('Удалить преподавателя?')">
+                        <button class="link danger" type="submit">Удалить</button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+</div>

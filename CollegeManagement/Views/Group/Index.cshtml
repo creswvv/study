@@ -1,0 +1,20 @@
+@model List<Group>
+@{ ViewData["Title"] = "Группы"; }
+<div class="container">
+    <div class="page-head">
+        <div><h1>Учебные группы</h1><p class="muted">Всего: @Model.Count</p></div>
+        @if (User.IsInRole("Admin")) { <a class="btn" asp-action="Create">+ Создать группу</a> }
+    </div>
+    <div class="grid g-4">
+        @foreach (var g in Model)
+        {
+            var vals = g.Students.SelectMany(s => s.Grades).Select(x => x.Value).ToList();
+            <a class="group-card" asp-action="Details" asp-route-id="@g.Id">
+                <span class="course">@g.Course курс</span>
+                <h2>@g.Name</h2>
+                <p>Студентов: <b>@g.Students.Count</b></p>
+                <p>Средний балл: <b>@(vals.Count == 0 ? "—" : vals.Average().ToString("0.00"))</b></p>
+            </a>
+        }
+    </div>
+</div>

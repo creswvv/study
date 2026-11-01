@@ -1,0 +1,41 @@
+@model LoginVm
+@inject ICollegeInfo College
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вход — @College.Name</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-page">
+<div class="login-card">
+    <div class="brand big"><span class="logo">C</span><span>CollegeMS</span></div>
+    <h1>Добро пожаловать!</h1>
+    <p class="muted">@College.Name · @College.AcademicYear</p>
+
+    <form asp-action="Login" method="post">
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div asp-validation-summary="ModelOnly" class="flash err"></div>
+        <label>Логин</label>
+        <input asp-for="Login" autofocus />
+        <span asp-validation-for="Login" class="field-err"></span>
+        <label>Пароль</label>
+        <input asp-for="Password" />
+        <span asp-validation-for="Password" class="field-err"></span>
+        <button class="btn btn-block" type="submit">Войти</button>
+    </form>
+
+    <div class="demo">
+        <b>Тестовые аккаунты</b>
+        <div><code>admin</code> / <code>admin123</code> — администратор</div>
+        <div><code>teacher</code> / <code>teacher123</code> — преподаватель</div>
+        <div><code>student</code> / <code>student123</code> — студент</div>
+    </div>
+</div>
+</body>
+</html>

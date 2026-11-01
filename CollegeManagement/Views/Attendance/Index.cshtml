@@ -1,0 +1,48 @@
+@model AttendanceIndexVm
+@{
+    ViewData["Title"] = "Посещаемость";
+    var canEdit = User.IsInRole("Admin") || User.IsInRole("Teacher");
+}
+<div class="container">
+    <div class="page-head">
+        <div><h1>Посещаемость</h1><p class="muted">Отметки за @Model.Date.ToString("dd.MM.yyyy")</p></div>
+        <a class="btn btn-light" asp-action="Report">Отчёт за период →</a>
+    </div>
+
+    <form class="filters" method="get">
+        <select name="groupId">
+            @foreach (var g in Model.Groups) { <option value="@g.Id" selected="@(g.Id == Model.GroupId)">@g.Name</option> }
+        </select>
+        <input type="date" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" />
+        <button class="btn btn-light" type="submit">Показать</button>
+    </form>
+
+    <div class="stats three">
+        <div class="stat green"><span class="ico">✔</span><div><b>@Model.Stats.Present</b><small>ПРИСУТСТВУЮТ</small></div></div>
+        <div class="stat"><span class="ico">☹</span><div><b>@Model.Stats.Absent</b><small>ОТСУТСТВУЮТ</small></div></div>
+        <div class="stat"><span class="ico">⏰</span><div><b>@Model.Stats.Late</b><small>ОПОЗДАЛИ</small></div></div>
+    </div>
+
+    <form asp-action="Save" method="post">
+        <input type="hidden" name="groupId" value="@Model.GroupId" />
+        <input type="hidden" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" />
+        <div class="card flush">
+            <table class="table">
+                <thead><tr><th>Студент</th><th>Присутствует</th><th>Опоздал</th><th>Отсутствует</th></tr></thead>
+                <tbody>
+                @foreach (var s in Model.Students)
+                {
+                    var cur = Model.Marks.TryGetValue(s.Id, out var st) ? st : AttendanceStatus.Present;
+                    <tr>
+                        <td><span class="avatar sm av-@(s.Id % 6)">@s.Initials</span> @s.FullName</td>
+                        <td><input type="radio" name="status[@s.Id]" value="Present" checked="@(cur == AttendanceStatus.Present)" disabled="@(!canEdit)" /></td>
+                        <td><input type="radio" name="status[@s.Id]" value="Late" checked="@(cur == AttendanceStatus.Late)" disabled="@(!canEdit)" /></td>
+                        <td><input type="radio" name="status[@s.Id]" value="Absent" checked="@(cur == AttendanceStatus.Absent)" disabled="@(!canEdit)" /></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        @if (canEdit && Model.Students.Count > 0) { <div class="form-actions"><button class="btn" type="submit">Сохранить отметки</button></div> }
+    </form>
+</div>

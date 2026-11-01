@@ -1,0 +1,64 @@
+@model GradeIndexVm
+@{
+    ViewData["Title"] = "Журнал оценок";
+    var canEdit = User.IsInRole("Admin") || User.IsInRole("Teacher");
+    var subject = Model.Subjects.FirstOrDefault(s => s.Id == Model.SubjectId);
+}
+<div class="container">
+    <div class="page-head"><div><h1>Электронный журнал</h1><p class="muted">Оценки от 2 до 5</p></div></div>
+
+    <form class="filters" method="get">
+        <select name="groupId">
+            @foreach (var g in Model.Groups) { <option value="@g.Id" selected="@(g.Id == Model.GroupId)">@g.Name</option> }
+        </select>
+        <select name="subjectId">
+            @foreach (var s in Model.Subjects) { <option value="@s.Id" selected="@(s.Id == Model.SubjectId)">@s.Name</option> }
+        </select>
+        <button class="btn btn-light" type="submit">Показать</button>
+    </form>
+
+    <div class="card flush">
+        <table class="table">
+            <thead><tr><th>Студент</th><th>Оценки по предмету «@subject?.Name»</th><th>Средняя</th>@if (canEdit) { <th>Новая оценка</th> }</tr></thead>
+            <tbody>
+            @foreach (var s in Model.Students)
+            {
+                var grades = s.Grades.Where(g => g.SubjectId == Model.SubjectId).OrderBy(g => g.Date).ToList();
+                <tr>
+                    <td><span class="avatar sm av-@(s.Id % 6)">@s.Initials</span> @s.FullName</td>
+                    <td>
+                        <div class="chips">
+                        @foreach (var g in grades)
+                        {
+                            <span class="chip g@(g.Value)" title="@g.Date.ToString("dd.MM.yyyy")">
+                                @g.Value
+                                @if (canEdit)
+                                {
+                                    <form asp-action="Remove" asp-route-id="@g.Id" asp-route-groupId="@Model.GroupId" asp-route-subjectId="@Model.SubjectId" method="post">
+                                        <button type="submit" title="Удалить">×</button>
+                                    </form>
+                                }
+                            </span>
+                        }
+                        </div>
+                    </td>
+                    <td><b>@(grades.Count == 0 ? "—" : grades.Average(g => g.Value).ToString("0.00"))</b></td>
+                    @if (canEdit)
+                    {
+                        <td>
+                            <form asp-action="Add" method="post" class="inline-form">
+                                <input type="hidden" name="studentId" value="@s.Id" />
+                                <input type="hidden" name="subjectId" value="@Model.SubjectId" />
+                                <input type="hidden" name="groupId" value="@Model.GroupId" />
+                                <select name="value"><option>5</option><option>4</option><option>3</option><option>2</option></select>
+                                <button class="btn sm" type="submit">+</button>
+                            </form>
+                        </td>
+                    }
+                </tr>
+            }
+            @if (Model.Students.Count == 0) { <tr><td colspan="4" class="muted center">В группе нет студентов</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>

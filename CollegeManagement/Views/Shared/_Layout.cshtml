@@ -1,0 +1,59 @@
+@inject ICollegeInfo College
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string Active(string c) => string.Equals(ctrl, c, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var userName = User.Identity?.Name ?? "";
+    var initials = string.Concat(userName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => p[0]));
+    var role = User.IsInRole("Admin") ? "Администратор" : User.IsInRole("Teacher") ? "Преподаватель" : "Студент";
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] — @College.Name</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <span class="logo">C</span><span>CollegeMS</span>
+        </a>
+        <nav class="nav">
+            <a class="@Active("Home")" asp-controller="Home" asp-action="Index">Обзор</a>
+            <a class="@Active("Student")" asp-controller="Student" asp-action="Index">Студенты</a>
+            <a class="@Active("Teacher")" asp-controller="Teacher" asp-action="Index">Преподаватели</a>
+            <a class="@Active("Group")" asp-controller="Group" asp-action="Index">Группы</a>
+            <a class="@Active("Grade")" asp-controller="Grade" asp-action="Index">Журнал оценок</a>
+            <a class="@Active("Attendance")" asp-controller="Attendance" asp-action="Index">Посещаемость</a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a class="@Active("Admin")" asp-controller="Admin" asp-action="Index">Админ-панель</a>
+            }
+        </nav>
+        <form class="search" asp-controller="Student" asp-action="Index" method="get">
+            <input type="text" name="search" placeholder="Поиск студента..." />
+        </form>
+        <div class="userbox">
+            <div class="who"><b>@userName</b><small>@role</small></div>
+            <span class="avatar av-1">@initials</span>
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                <button class="btn-ghost" type="submit" title="Выйти">Выйти</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<main>
+    @if (TempData["Ok"] != null) { <div class="container"><div class="flash ok">@TempData["Ok"]</div></div> }
+    @if (TempData["Error"] != null) { <div class="container"><div class="flash err">@TempData["Error"]</div></div> }
+    @RenderBody()
+</main>
+
+<footer class="footer">© @DateTime.Now.Year @College.Name · учебный год @College.AcademicYear</footer>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,38 @@
+@model AttendanceReportVm
+@{ ViewData["Title"] = "Отчёт по посещаемости"; }
+<div class="container">
+    <div class="page-head">
+        <div><h1>Отчёт по посещаемости</h1><p class="muted">@Model.From.ToString("dd.MM.yyyy") — @Model.To.ToString("dd.MM.yyyy")</p></div>
+        <a class="btn btn-light" asp-action="Index">← К отметкам</a>
+    </div>
+    <form class="filters" method="get">
+        <select name="groupId">
+            @foreach (var g in Model.Groups) { <option value="@g.Id" selected="@(g.Id == Model.GroupId)">@g.Name</option> }
+        </select>
+        <input type="date" name="from" value="@Model.From.ToString("yyyy-MM-dd")" />
+        <input type="date" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+        <button class="btn btn-light" type="submit">Показать</button>
+    </form>
+
+    <div class="stats three">
+        <div class="stat green"><span class="ico">%</span><div><b>@Model.Total.Percent%</b><small>ПОСЕЩАЕМОСТЬ ГРУППЫ</small></div></div>
+        <div class="stat"><span class="ico">☹</span><div><b>@Model.Total.Absent</b><small>ПРОПУСКОВ</small></div></div>
+        <div class="stat"><span class="ico">⏰</span><div><b>@Model.Total.Late</b><small>ОПОЗДАНИЙ</small></div></div>
+    </div>
+
+    <div class="card flush">
+        <table class="table">
+            <thead><tr><th>Студент</th><th>Присутствовал</th><th>Опоздал</th><th>Пропустил</th><th>Посещаемость</th></tr></thead>
+            <tbody>
+            @foreach (var row in Model.Rows)
+            {
+                <tr>
+                    <td>@row.Student.FullName</td>
+                    <td>@row.Stats.Present</td><td>@row.Stats.Late</td><td>@row.Stats.Absent</td>
+                    <td><div class="bar"><span style="width:@(row.Stats.Percent.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></span></div> @row.Stats.Percent%</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

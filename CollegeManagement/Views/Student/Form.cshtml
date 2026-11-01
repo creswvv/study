@@ -1,0 +1,20 @@
+@model StudentForm
+@{ ViewData["Title"] = Model.Id == 0 ? "Новый студент" : "Редактирование студента"; }
+<div class="container narrow">
+    <div class="page-head"><h1>@ViewData["Title"]</h1></div>
+    <div class="card">
+        <form method="post" asp-action="@(Model.Id == 0 ? "Create" : "Edit")">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="flash err"></div>
+            <label>Имя</label><input asp-for="Name" /><span asp-validation-for="Name" class="field-err"></span>
+            <label>Фамилия</label><input asp-for="Surname" /><span asp-validation-for="Surname" class="field-err"></span>
+            <label>Возраст</label><input asp-for="Age" type="number" /><span asp-validation-for="Age" class="field-err"></span>
+            <label>Группа</label>
+            <select asp-for="GroupId" asp-items="(SelectList)ViewBag.Groups"><option value="">Без группы</option></select>
+            <div class="form-actions">
+                <button class="btn" type="submit">Сохранить</button>
+                <a class="btn btn-light" asp-action="Index">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>

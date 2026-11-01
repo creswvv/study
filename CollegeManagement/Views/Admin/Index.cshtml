@@ -1,0 +1,108 @@
+@model AdminVm
+@inject ICollegeInfo College
+@{ ViewData["Title"] = "Админ-панель"; }
+<div class="container">
+    <div class="page-head"><div><h1>Административная панель</h1><p class="muted">Управление колледжем</p></div></div>
+
+    <div class="stats">
+        <div class="stat"><span class="ico">🎓</span><div><b>@Model.Report.StudentCount</b><small>СТУДЕНТОВ</small></div></div>
+        <div class="stat"><span class="ico">👨‍🏫</span><div><b>@Model.Report.TeacherCount</b><small>ПРЕПОДАВАТЕЛЕЙ</small></div></div>
+        <div class="stat green"><span class="ico">★</span><div><b>@Model.Report.AverageGrade.ToString("0.00")</b><small>СРЕДНИЙ БАЛЛ</small></div></div>
+        <div class="stat"><span class="ico">%</span><div><b>@Model.Report.AttendancePercent%</b><small>ПОСЕЩАЕМОСТЬ</small></div></div>
+    </div>
+
+    <div class="grid g-2">
+        <div class="card">
+            <h3>Настройки колледжа</h3>
+            <form asp-action="UpdateSettings" method="post">
+                <label>Название</label><input name="collegeName" value="@College.Name" />
+                <label>Учебный год</label><input name="academicYear" value="@College.AcademicYear" />
+                <div class="form-actions"><button class="btn" type="submit">Сохранить</button></div>
+            </form>
+        </div>
+        <div class="card">
+            <h3>Отчёт по группам</h3>
+            <table class="table compact">
+                <thead><tr><th>Группа</th><th>Курс</th><th>Студентов</th><th>Ср. балл</th></tr></thead>
+                <tbody>
+                @foreach (var g in Model.Report.Groups) { <tr><td>@g.Name</td><td>@g.Course</td><td>@g.Students</td><td>@g.Average.ToString("0.00")</td></tr> }
+                </tbody>
+            </table>
+            <h3 class="mt">Лучшие студенты</h3>
+            @foreach (var t in Model.Report.Top) { <div class="kv"><span>@t.Name (@t.Group)</span><b>@t.Average.ToString("0.00")</b></div> }
+        </div>
+    </div>
+
+    <div class="card flush">
+        <div class="card-head"><h3>Предметы</h3></div>
+        <table class="table">
+            <thead><tr><th>Предмет</th><th>Часы</th><th>Преподаватель</th><th>Назначить</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var s in Model.Subjects)
+            {
+                <tr>
+                    <td>@s.Name</td><td>@s.Hours</td><td>@(s.Teacher?.FullName ?? "не назначен")</td>
+                    <td>
+                        <form asp-action="AssignTeacher" method="post" class="inline-form">
+                            <input type="hidden" name="subjectId" value="@s.Id" />
+                            <select name="teacherId">
+                                @foreach (var t in Model.Teachers) { <option value="@t.Id" selected="@(t.Id == s.TeacherId)">@t.FullName</option> }
+                            </select>
+                            <button class="btn btn-light sm" type="submit">OK</button>
+                        </form>
+                    </td>
+                    <td class="actions">
+                        <form asp-action="DeleteSubject" asp-route-id="@s.Id" method="post" onsubmit="return confirm('Удалить предмет?')">
+                            <button class="link danger" type="submit">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        <form asp-action="CreateSubject" method="post" class="inline-form pad">
+            <input name="Name" placeholder="Название предмета" required />
+            <input name="Hours" type="number" value="72" min="1" />
+            <select name="TeacherId"><option value="">Без преподавателя</option>
+                @foreach (var t in Model.Teachers) { <option value="@t.Id">@t.FullName</option> }
+            </select>
+            <button class="btn sm" type="submit">+ Добавить предмет</button>
+        </form>
+    </div>
+
+    <div class="card flush">
+        <div class="card-head"><h3>Пользователи системы</h3></div>
+        <table class="table">
+            <thead><tr><th>Логин</th><th>Имя</th><th>Роль</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var u in Model.Users)
+            {
+                <tr>
+                    <td><code>@u.LoginName</code></td><td>@u.FullName</td>
+                    <td><span class="badge @(u.Role == "Admin" ? "fail" : u.Role == "Teacher" ? "pending" : "pass")">@u.Role</span></td>
+                    <td class="actions">
+                        @if (u.LoginName != "admin")
+                        {
+                            <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" onsubmit="return confirm('Удалить пользователя?')">
+                                <button class="link danger" type="submit">Удалить</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        <form asp-action="CreateUser" method="post" class="inline-form pad wrap">
+            <input name="Login" placeholder="Логин" required />
+            <input name="FullName" placeholder="Полное имя" required />
+            <input name="Password" type="password" placeholder="Пароль (от 4 символов)" required />
+            <select name="Role"><option value="Student">Student</option><option value="Teacher">Teacher</option><option value="Admin">Admin</option></select>
+            <select name="PersonId">
+                <option value="">Не привязывать</option>
+                <optgroup label="Студенты">@foreach (var s in Model.Students) { <option value="@s.Id">@s.FullName</option> }</optgroup>
+                <optgroup label="Преподаватели">@foreach (var t in Model.Teachers) { <option value="@t.Id">@t.FullName</option> }</optgroup>
+            </select>
+            <button class="btn sm" type="submit">+ Создать пользователя</button>
+        </form>
+    </div>
+</div>

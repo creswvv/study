@@ -1,0 +1,116 @@
+@model DashboardData
+@inject ICollegeInfo College
+@{
+    ViewData["Title"] = "Обзор";
+    var first = (User.Identity?.Name ?? "").Split(' ').LastOrDefault() ?? "";
+    string Pass(int v) => v >= 3 ? "pass" : "fail";
+}
+<section class="hero">
+    <div class="container hero-row">
+        <div class="hello">
+            <span class="avatar av-2 lg">@((User.Identity?.Name ?? "?").Substring(0, 1))</span>
+            <div>
+                <h2>Здравствуйте, @first! 👋</h2>
+                <p>Желаем отличного дня · @College.Name, @College.AcademicYear</p>
+            </div>
+        </div>
+        <div class="hero-filters">
+            <span class="pill">Данные за @Model.Day.ToString("dd.MM.yyyy")</span>
+            <span class="pill">Последние 30 дней</span>
+        </div>
+    </div>
+</section>
+
+<div class="container pull-up">
+    <div class="stats">
+        <div class="stat"><span class="ico">🎓</span><div><b>@Model.Total</b><small>ВСЕГО СТУДЕНТОВ</small></div></div>
+        <div class="stat green"><span class="ico">✔</span><div><b>@Model.Present</b><small>ПРИСУТСТВУЮТ</small></div></div>
+        <div class="stat"><span class="ico">☹</span><div><b>@Model.Absent.ToString("00")</b><small>ОТСУТСТВУЮТ</small></div></div>
+        <div class="stat"><span class="ico">⏰</span><div><b>@Model.Late.ToString("00")</b><small>ОПОЗДАЛИ</small></div></div>
+    </div>
+
+    <div class="grid g-2-1">
+        <div class="card">
+            <h3>Общий отчёт по посещаемости</h3>
+            <div class="chart-box"><canvas id="trend"></canvas></div>
+        </div>
+        <div class="card">
+            <h3>Студенты по группам</h3>
+            <div class="chart-box"><canvas id="groups"></canvas></div>
+        </div>
+    </div>
+
+    <div class="grid g-3">
+        <div class="card">
+            <h3>Преподавателей / групп / предметов</h3>
+            <div class="kv"><span>Преподавателей</span><b>@Model.Report.TeacherCount</b></div>
+            <div class="kv"><span>Учебных групп</span><b>@Model.Report.GroupCount</b></div>
+            <div class="kv"><span>Предметов</span><b>@Model.Report.SubjectCount</b></div>
+            <div class="kv"><span>Средний балл</span><b>@Model.Report.AverageGrade.ToString("0.00")</b></div>
+            <div class="kv"><span>Посещаемость (30 дн.)</span><b>@Model.Report.AttendancePercent%</b></div>
+        </div>
+        <div class="card">
+            <h3>Топ-6 по посещаемости</h3>
+            @foreach (var a in Model.TopAttendants)
+            {
+                <div class="row-item">
+                    <span class="avatar av-@(a.Name.Length % 6)">@a.Name.Substring(0, 1)</span>
+                    <span class="grow">@a.Name <span class="tag">@a.Percent%</span></span>
+                    <span class="muted">@a.Days дн.</span>
+                </div>
+            }
+        </div>
+        <div class="card">
+            <h3>Пропуски по дням недели</h3>
+            <div class="chart-box sm"><canvas id="weekly"></canvas></div>
+        </div>
+    </div>
+
+    <div class="card flush">
+        <div class="card-head"><h3>Последние оценки</h3><a class="link" asp-controller="Grade" asp-action="Index">Журнал →</a></div>
+        <table class="table">
+            <thead><tr><th>ID</th><th>Студент</th><th>Группа</th><th>Предмет</th><th>Оценка</th><th>Статус</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Recent)
+            {
+                <tr>
+                    <td class="idc">@r.StudentId</td>
+                    <td><span class="avatar sm av-@(r.Student.Length % 6)">@r.Initials</span> @r.Student</td>
+                    <td>@r.Group</td>
+                    <td>@r.Subject</td>
+                    <td><b>@r.Value</b></td>
+                    <td><span class="badge @Pass(r.Value)">@(r.Value >= 3 ? "Зачтено" : "Не сдано")</span></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    const green = '#2ed47a', dark = '#1f2937';
+    new Chart(document.getElementById('trend'), {
+        type: 'line',
+        data: { labels: @Json.Serialize(Model.TrendLabels),
+                datasets: [{ data: @Json.Serialize(Model.TrendValues), borderColor: green, backgroundColor: 'rgba(46,212,122,.12)',
+                             fill: true, tension: .4, pointBackgroundColor: '#fff', pointBorderColor: green, pointRadius: 4 }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
+                   scales: { y: { grid: { color: '#f0f1f5' } }, x: { grid: { display: false } } } }
+    });
+    new Chart(document.getElementById('groups'), {
+        type: 'bar',
+        data: { labels: @Json.Serialize(Model.GroupLabels),
+                datasets: [{ data: @Json.Serialize(Model.GroupCounts), backgroundColor: '#e9eaee', hoverBackgroundColor: green, borderRadius: 6 }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } },
+                   scales: { y: { beginAtZero: true, grid: { color: '#f0f1f5' } }, x: { grid: { display: false } } } }
+    });
+    new Chart(document.getElementById('weekly'), {
+        type: 'radar',
+        data: { labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт'],
+                datasets: [{ data: @Json.Serialize(Model.WeeklyAbsent), borderColor: green, backgroundColor: 'rgba(46,212,122,.2)' }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+</script>
+}

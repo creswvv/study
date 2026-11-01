@@ -1,0 +1,37 @@
+@model Student
+@{
+    ViewData["Title"] = Model.FullName;
+    var stats = (AttendanceStats)ViewBag.Stats;
+    var bySubject = Model.Grades.GroupBy(g => g.Subject!.Name).OrderBy(g => g.Key);
+}
+<div class="container">
+    <div class="page-head"><h1>Профиль студента</h1><a class="btn btn-light" asp-action="Index">← К списку</a></div>
+    <div class="grid g-1-2">
+        <div class="profile-card">
+            <span class="avatar lg av-@(Model.Id % 6)">@Model.Initials</span>
+            <h2>@Model.FullName</h2>
+            <p>Группа: @(Model.Group?.Name ?? "—")</p>
+            <p>ID: @Model.StudentId</p>
+            <p class="small">@Model.GetStudentInfo()</p>
+        </div>
+        <div>
+            <div class="stats three">
+                <div class="stat"><span class="ico">★</span><div><b>@(Model.Grades.Count == 0 ? "—" : Model.Average.ToString("0.00"))</b><small>СРЕДНИЙ БАЛЛ</small></div></div>
+                <div class="stat green"><span class="ico">✔</span><div><b>@stats.Percent%</b><small>ПОСЕЩАЕМОСТЬ</small></div></div>
+                <div class="stat"><span class="ico">✖</span><div><b>@stats.Absent</b><small>ПРОПУСКОВ</small></div></div>
+            </div>
+            <div class="card flush">
+                <table class="table">
+                    <thead><tr><th>Предмет</th><th>Оценки</th><th>Средняя</th></tr></thead>
+                    <tbody>
+                    @foreach (var g in bySubject)
+                    {
+                        <tr><td>@g.Key</td><td>@string.Join(", ", g.OrderBy(x => x.Date).Select(x => x.Value))</td><td>@g.Average(x => x.Value).ToString("0.00")</td></tr>
+                    }
+                    @if (!bySubject.Any()) { <tr><td colspan="3" class="muted center">Оценок пока нет</td></tr> }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
